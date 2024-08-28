@@ -1,43 +1,47 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_excel('guitar_frets.xlsx')
+# Read the Excel file
+df = pd.read_excel('FretCalculator.xlsx', header=1)
 
-df = df.sort_values(['string_number', 'fret_position'])
+# Extract fret positions for each string
+frets = df.iloc[:, 0].dropna()
+frets = frets[frets != 'Open'].astype(int)  # Exclude 'Open' and convert to int
+string_positions = df.iloc[:, [1, 4, 7, 10, 13, 16, 19]].dropna()
 
-fig, ax = plt.subplots(figsize=(15, 6));
+# Set up the plot
+fig, ax = plt.subplots(figsize=(20, 10))  # Increased figure size
 
-for string in range(1, 8):  
-    string_data = df[df['string_number'] == string]
+# Define string names
+string_names = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2', 'A1']
+
+# Plot each string
+for i, string_name in enumerate(string_names):
+    y = 6 - i  # Reverse the order of strings
+    x = string_positions.iloc[:, i]
+    ax.plot(x, [y] * len(x), 'k-', linewidth=1)
     
-    # Plot the string
-    ax.plot(string_data['scale_length'], [string] * len(string_data), color='black', linewidth=1)
-    
-    # Plot the frets
-    ax.scatter(string_data['scale_length'], [string] * len(string_data), color='red', s=50)
+    # Plot frets
+    for fret, pos in zip(['Open'] + list(frets), x):
+        ax.plot([pos, pos], [y-0.1, y+0.1], 'r-', linewidth=2)
 
-# Customize the plot
-ax.set_ylim(0.5, 7.5)
-ax.set_xlim(0, df['scale_length'].max() * 1.05)
-ax.set_yticks(range(1, 8))
-ax.set_yticklabels(['String ' + str(i) for i in range(1, 8)])
-ax.set_xlabel('Scale Length')
-ax.set_title('Guitar Fret Positions')
-
-# Add fret number labels
-for fret in df['fret_position'].unique():
-    fret_data = df[df['fret_position'] == fret]
-    if not fret_data.empty:
-        ax.text(fret_data['scale_length'].iloc[0], 0.5, str(int(fret)), 
-                ha='center', va='bottom', fontsize=8, rotation=90)
-
-# Invert y-axis to match guitar orientation
-ax.invert_yaxis()
+# Set plot limits and labels
+ax.set_xlim(24, 27.5)  # Adjusted to focus on the fretboard
+ax.set_ylim(-1, 6.5)  # Increased bottom margin for fret numbers
+ax.set_yticks(range(7))
+ax.set_yticklabels(string_names)
+ax.set_xlabel('Scale Length (inches)', fontsize=12)
+ax.set_title('Guitar Fret Positions', fontsize=16)
 
 # Remove top and right spines
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 
-# Show the plot
-plt.tight_layout()
+# Add fret numbers
+for fret, pos in zip(['Open'] + list(frets), string_positions.iloc[:, 0]):
+    ax.text(pos, -0.5, str(fret), ha='center', va='top', rotation=90, fontsize=10)
+
+# Adjust layout
+plt.subplots_adjust(bottom=0.15, left=0.05, right=0.95, top=0.95)
+
 plt.show()
